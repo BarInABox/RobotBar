@@ -1,10 +1,13 @@
 #include <Wire.h>
 
-bool testing = false;
 
 String input;
+
 bool homed = false;
+
 String mode = "";
+
+long SerialLinearBase = 0;
 long SerialBase = 0;
 long SerialShoulder = 0;
 long SerialTurnElbow = 0;
@@ -13,6 +16,7 @@ long SerialBuckleHand = 0;
 long SerialTurnBase = 0;
 long SerialCloseHand = 0;
 
+long MaxLinearBase ;
 long MaxBase ;
 long MaxShoulder;
 long MaxTurnElbow;
@@ -22,13 +26,14 @@ long MaxTurnBase;
 long MaxCloseHand;
 
 int Result = 0;
+int ResultLinearBase = 0;
 int ResultBase = 0;
 int ResultShoulder = 0;
 int ResultElbow = 0;
 int ResultTurnElbow = 0;
 int ResultBuckleHand = 0;
 int ResultCloseHand = 0;
-int drive = 1;
+
 
 int startPositionOneBase = 0;
 int startPositionTwoBase = 0;
@@ -60,54 +65,61 @@ int startPositionTwoCloseHand  = 0;
 int sensorPositionOneCloseHand  = 0;
 int sensorPositionTwoCloseHand  = 0;
 
-const int PIN_SENSOR_ONEBase = 0;
-const int PIN_SENSOR_TWOBase = 0;
-const int PIN_END_STOPBase = 0;
-const int PIN_END_STOPTwoBase = 0;
-const int OUTPUT_FIRST_PINBase = 0;
-const int OUTPUT_SECOND_PINBase = 0;
 
-const int PIN_SENSOR_ONEShoulder = 25 ;
-const int PIN_SENSOR_TWOShoulder = 24;
-const int PIN_END_STOPShoulder = 33;
-const int PIN_END_STOPTwoShoulder = 33;
-const int OUTPUT_FIRST_PINShoulder = 6 ;
+const int PIN_linearBaseEnd = A4;
+const int PIN_linearBaseEnd2 = A5;
+
+const int PIN_linearBasePulse = A0;
+const int PIN_linearBaseDirection = A1;
+
+const int PIN_SENSOR_ONEBase = 24;
+const int PIN_SENSOR_TWOBase = 25;
+const int PIN_END_STOPBase = 22;
+const int PIN_END_STOPTwoBase = 23;
+const int OUTPUT_FIRST_PINBase = 2;
+const int OUTPUT_SECOND_PINBase = 3;
+
+const int PIN_SENSOR_ONEShoulder = 24;
+const int PIN_SENSOR_TWOShoulder = 25;
+const int OUTPUT_FIRST_PINShoulder = 6;
 const int OUTPUT_SECOND_PINShoulder = 7;
+const int PIN_END_STOPShoulder = 37;
+const int PIN_END_STOPTwoShoulder = 43;
 
-const int PIN_SENSOR_ONETurnElbow = 0 ;
-const int PIN_SENSOR_TWOTurnElbow = 0;
-const int PIN_END_STOPTurnElbow = 0 ;
-const int PIN_END_STOPTwoTurnElbow = 0 ;
-const int OUTPUT_FIRST_PINTurnElbow = 12 ;
-const int OUTPUT_SECOND_PINTurnElbow = 13 ;
+const int PIN_SENSOR_ONETurnElbow = 49 ;
+const int PIN_SENSOR_TWOTurnElbow = 48;
+const int PIN_END_STOPTurnElbow = 47 ;
+const int PIN_END_STOPTwoTurnElbow = 46 ;
+const int OUTPUT_FIRST_PINTurnElbow = 4 ;
+const int OUTPUT_SECOND_PINTurnElbow = 5 ;
 
-const int PIN_SENSOR_ONEElbow = 26 ;
-const int PIN_SENSOR_TWOElbow = 27;
-const int PIN_END_STOPElbow = 27;
-const int PIN_END_STOPTwoElbow = 27;
-const int OUTPUT_FIRST_PINElbow = 4 ;
-const int OUTPUT_SECOND_PINElbow = 5;
+const int PIN_SENSOR_ONEElbow = 53 ;
+const int PIN_SENSOR_TWOElbow = 52;
+const int PIN_END_STOPElbow = 51;
+const int PIN_END_STOPTwoElbow = 50;
+const int OUTPUT_FIRST_PINElbow = 6 ;
+const int OUTPUT_SECOND_PINElbow = 7;
 
-const int PIN_SENSOR_ONEBuckleHand  = 55 ;
-const int PIN_SENSOR_TWOBuckleHand  = 56;
-const int PIN_END_STOPBuckleHand = 27;
-const int PIN_END_STOPTwoBuckleHand = 27;
-const int OUTPUT_FIRST_PINBuckleHand = 2 ;
-const int OUTPUT_SECOND_PINBuckleHand = 3;
+const int PIN_SENSOR_ONEBuckleHand  = 41 ;
+const int PIN_SENSOR_TWOBuckleHand  = 40;
+const int PIN_END_STOPBuckleHand = 39;
+const int PIN_END_STOPTwoBuckleHand = 38;
+const int OUTPUT_FIRST_PINBuckleHand = 13 ;
+const int OUTPUT_SECOND_PINBuckleHand = 12;
 
-const int PIN_SENSOR_ONECloseHand = 44 ;
-const int PIN_SENSOR_TWOCloseHand = 45;
-const int PIN_END_STOPCloseHand = 27;
-const int PIN_END_STOPTwoCloseHand = 27;
-const int OUTPUT_FIRST_PINCloseHand = 12 ;
-const int OUTPUT_SECOND_PINCloseHand = 13;
+const int PIN_SENSOR_ONECloseHand = 45 ;
+const int PIN_SENSOR_TWOCloseHand = 44;
+const int PIN_END_STOPCloseHand = 43;
+const int PIN_END_STOPTwoCloseHand = 42;
+const int OUTPUT_FIRST_PINCloseHand = 9 ;
+const int OUTPUT_SECOND_PINCloseHand = 8;
 
-int StepCounterBase = 0;
-int StepCounterShoulder = 0;
-int StepCounterTurnElbow = 0;
-int StepCounterElbow = 0;
-int StepCounterBuckleHand = 0;
-int StepCounterCloseHand = 0;
+long StepCounterBase = 0;
+long StepCounterShoulder = 0;
+long StepCounterTurnElbow = 0;
+long StepCounterElbow = 0;
+long StepCounterBuckleHand = 0;
+long StepCounterCloseHand = 0;
 
 void setup() {
 
@@ -115,6 +127,14 @@ void setup() {
   Serial.println("Started up");
   Wire.begin(4);                // join i2c bus with address #4
   Wire.onReceive(receiveEvent); // register event
+
+  pinMode(PIN_linearBasePulse, OUTPUT); //Puls
+  pinMode(PIN_linearBaseDirection, OUTPUT); //Direction
+  pinMode(PIN_linearBaseEnd, INPUT_PULLUP);
+
+
+
+
 
   pinMode(PIN_SENSOR_ONEBase, INPUT);
   pinMode(PIN_SENSOR_TWOBase, INPUT);
@@ -125,7 +145,6 @@ void setup() {
   pinMode(PIN_SENSOR_TWOShoulder, INPUT);
   pinMode(PIN_END_STOPShoulder, INPUT_PULLUP);
   pinMode(PIN_END_STOPTwoShoulder, INPUT_PULLUP);
-
 
   pinMode(PIN_SENSOR_ONETurnElbow, INPUT);
   pinMode(PIN_SENSOR_TWOTurnElbow, INPUT);
@@ -170,6 +189,7 @@ void setup() {
   pinMode(OUTPUT_FIRST_PINCloseHand, OUTPUT);
   pinMode(OUTPUT_SECOND_PINCloseHand, OUTPUT);
 
+
   attachInterrupt(digitalPinToInterrupt(PIN_SENSOR_ONEBase), PositionBase, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PIN_SENSOR_TWOBase), PositionBase, CHANGE);
 
@@ -206,6 +226,7 @@ void setup() {
   startPositionOneShoulder = digitalRead(PIN_SENSOR_ONECloseHand);
   startPositionTwoShoulder = digitalRead(PIN_SENSOR_TWOCloseHand);
 }
+
 
 void PositionBase() {
 
@@ -389,7 +410,6 @@ void receiveEvent(int howMany)
   Serial.println(result);
 
   Result = result;
-  drive = 0;
 
   ResultCloseHand = result;
   ResultShoulder = result;
@@ -826,6 +846,10 @@ void moveRobotBuckleHand(int newgoalBuckleHand) {
   analogWrite(OUTPUT_SECOND_PINBuckleHand, 0);
 
 }
+void mobeRobotLinearBase(int newgoalLinearBase) {
+
+
+}
 
 void moveRobotCloseHand(int newgoalCloseHand) {
   long stepCounter = StepCounterCloseHand;
@@ -878,106 +902,246 @@ void moveRobotCloseHand(int newgoalCloseHand) {
   analogWrite(OUTPUT_SECOND_PINCloseHand, 0);
 
 }
+bool stopitBase = false;
+bool startedBase = true;
+bool homedBase = false;
+bool stopitTurnElbow = false;
+bool startedTurnElbow = true;
+bool homedTurnElbow = false;
 
 void homing() {
+  Serial.println("homing");
+  analogWrite(OUTPUT_FIRST_PINBase, 0);
+  analogWrite(OUTPUT_SECOND_PINBase, 0);
+  analogWrite(OUTPUT_FIRST_PINShoulder, 0);
+  analogWrite(OUTPUT_SECOND_PINShoulder, 0);
+  analogWrite(OUTPUT_FIRST_PINTurnElbow, 0);
+  analogWrite(OUTPUT_SECOND_PINTurnElbow, 0);
+  bool onceLinearBase  = 0;
+  bool backLinearBase = 0;
 
-  bool homedBase = false;
-  bool homedShoulder = false;
-  bool homedTurnElbow = false;
-  bool homedBuckleElbow = false;
-  bool homedBuckleHand = false;
-  bool homedCloseHand = false;
+  digitalWrite(PIN_linearBaseDirection, HIGH);
 
+  while (digitalRead(PIN_linearBaseEnd)  && onceLinearBase == 0) {
 
-  while (digitalRead(PIN_END_STOPBase) == HIGH || digitalRead ( PIN_END_STOPTwoBase == HIGH)) {
-    analogWrite(OUTPUT_FIRST_PINBase, 200);
-    analogWrite(OUTPUT_SECOND_PINBase, 0);
-    if (digitalRead(PIN_END_STOPBase) == LOW ) {
-      homedBase = true;
-      Serial.println("homed Base");
-      StepCounterBase = 0;
-    }
-    if (digitalRead(PIN_END_STOPTwoBase) == LOW ) {
-      homedBase = true;
-      Serial.println("homed Base");
-      StepCounterBase = 0;
-    }
+    digitalWrite(PIN_linearBasePulse, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(PIN_linearBasePulse, LOW);
+    delayMicroseconds(500);
 
   }
-  while (digitalRead(PIN_END_STOPBase) == HIGH || digitalRead ( PIN_END_STOPTwoBase == HIGH)) {
-    analogWrite(OUTPUT_FIRST_PINBase, 0);
-    analogWrite(OUTPUT_SECOND_PINBase, 200);
-    if (digitalRead(PIN_END_STOPBase) == LOW ) {
-      homedBase = true;
-      Serial.println("homed Base");
-      MaxBase = StepCounter;
-    }
-    if (digitalRead(PIN_END_STOPTwoBase) == LOW ) {
-      homedBase = true;
-      Serial.println("homed Base");
-      MaxBase = StepCounter;
-    }
+  onceLinearBase = true;
 
+  digitalWrite(PIN_linearBaseDirection, LOW);
+
+  while ( backLinearBase == 0) {
+
+    for (int i = 0; i < 5000; i++) {
+      digitalWrite(PIN_linearBasePulse, HIGH);
+
+      digitalWrite(PIN_linearBasePulse, LOW);
+      delayMicroseconds(500);
+    }
+    backLinearBase = 1;
   }
 
 
+  /*
+    while (stopitBase == false) {
 
-  if ( homedBase == true && homedShoulder == true && homedTurnElbow == true && homedBuckleElbow == true && homedBuckleHand == true && homedCloseHand == true) homed = true;
+
+    if (digitalRead(PIN_END_STOPTwoBase) == LOW && digitalRead(PIN_END_STOPBase) == LOW && startedBase == true) {
+      analogWrite(OUTPUT_FIRST_PINBase, 0);
+      analogWrite(OUTPUT_SECOND_PINBase, 100);
+
+      startedBase = false;
+      Serial.println("Started with 0_0 ");
+    }
+
+    if (digitalRead(PIN_END_STOPTwoBase) == LOW && digitalRead(PIN_END_STOPBase) == HIGH)
+    {
+      Serial.println("On End Two");
+      analogWrite(OUTPUT_FIRST_PINBase, 100);
+      analogWrite(OUTPUT_SECOND_PINBase, 0);
+    }
+
+    if (digitalRead(PIN_END_STOPTwoBase) == HIGH && digitalRead(PIN_END_STOPBase) == LOW) {
+      StepCounterBase = 0;
+      while (StepCounterBase < 50 ) {
+        analogWrite(OUTPUT_FIRST_PINBase, 0);
+        analogWrite(OUTPUT_SECOND_PINBase, 15);
+        Serial.println(StepCounterBase);
+      }
+      analogWrite(OUTPUT_FIRST_PINBase, 0);
+      analogWrite(OUTPUT_SECOND_PINBase, 0);
+    }
+
+
+    while (StepCounterBase > 0 && digitalRead(PIN_END_STOPTwoBase) == HIGH ) {
+      analogWrite(OUTPUT_FIRST_PINBase, 15);
+      analogWrite(OUTPUT_SECOND_PINBase, 0);
+      Serial.println(StepCounterBase);
+      secondtime = true;
+    }
+
+    if (StepCounterBase == 0 && secondtime == true)
+    {
+      analogWrite(OUTPUT_FIRST_PINBase, 0);
+      analogWrite(OUTPUT_SECOND_PINBase, 0);
+      Serial.println("homed Base on:" );
+      Serial.println(StepCounterBase);
+      homedBase = true;
+      stopitBase = true;
+    }
+    }
+    while (stopitShoulder == false) {
+
+
+    if (digitalRead(PIN_END_STOPTwoShoulder) == LOW && digitalRead(PIN_END_STOPShoulder) == LOW && startedShoulder == true) {
+      analogWrite(OUTPUT_FIRST_PINShoulder, 0);
+      analogWrite(OUTPUT_SECOND_PINShoulder, 50);
+
+      startedShoulder = false;
+      Serial.println("Started with 0_0 ");
+    }
+
+    if (digitalRead(PIN_END_STOPTwoShoulder) == LOW && digitalRead(PIN_END_STOPShoulder) == HIGH)
+    {
+      Serial.println("On End Two");
+      analogWrite(OUTPUT_FIRST_PINShoulder, 100);
+      analogWrite(OUTPUT_SECOND_PINShoulder, 0);
+    }
+
+    if (digitalRead(PIN_END_STOPShoulder) == LOW)
+    {
+      while (OnEdgeShoulder == false) {
+        while ( digitalRead(PIN_END_STOPShoulder) == LOW) {
+          analogWrite(OUTPUT_FIRST_PINShoulder, 0);
+          analogWrite(OUTPUT_SECOND_PINShoulder, 100);
+        }
+        analogWrite(OUTPUT_FIRST_PINShoulder, 0);
+        analogWrite(OUTPUT_SECOND_PINShoulder, 0);
+        while (digitalRead(PIN_END_STOPShoulder) == HIGH) {
+          analogWrite(OUTPUT_FIRST_PINShoulder, 150);
+          analogWrite(OUTPUT_SECOND_PINShoulder, 0);
+        }
+        analogWrite(OUTPUT_FIRST_PINShoulder, 0);
+        analogWrite(OUTPUT_SECOND_PINShoulder, 0);
+        StepCounterShoulder = 0;
+        OnEdgeShoulder = true;
+      }
+      stopitShoulder = true;
+      homedShoulder = true;
+    }
+    }
+    Serial.print("homed Shoulder on: ");
+    Serial.println(StepCounterShoulder);
+
+
+    while (stopitTurnElbow == false) {
+
+
+    if (digitalRead(PIN_END_STOPTwoTurnElbow) == LOW && digitalRead(PIN_END_STOPTurnElbow) == LOW && startedTurnElbow == true) {
+      analogWrite(OUTPUT_FIRST_PINTurnElbow, 0);
+      analogWrite(OUTPUT_SECOND_PINTurnElbow, 50);
+
+      startedTurnElbow = false;
+      Serial.println("Started with 0_0 ");
+    }
+
+    if (digitalRead(PIN_END_STOPTwoTurnElbow) == LOW && digitalRead(PIN_END_STOPTurnElbow) == HIGH)
+    {
+      Serial.println("On End Two");
+      analogWrite(OUTPUT_FIRST_PINTurnElbow, 100);
+      analogWrite(OUTPUT_SECOND_PINTurnElbow, 0);
+    }
+
+    if (digitalRead(PIN_END_STOPTurnElbow) == LOW)
+    {
+      while (OnEdgeTurnElbow == false) {
+        while ( digitalRead(PIN_END_STOPTurnElbow) == LOW) {
+          analogWrite(OUTPUT_FIRST_PINTurnElbow, 0);
+          analogWrite(OUTPUT_SECOND_PINTurnElbow, 100);
+
+        }
+        analogWrite(OUTPUT_FIRST_PINTurnElbow, 0);
+        analogWrite(OUTPUT_SECOND_PINTurnElbow, 0);
+        while (digitalRead(PIN_END_STOPTurnElbow) == HIGH) {
+          analogWrite(OUTPUT_FIRST_PINTurnElbow, 150);
+          analogWrite(OUTPUT_SECOND_PINTurnElbow, 0);
+
+        }
+        analogWrite(OUTPUT_FIRST_PINTurnElbow, 0);
+        analogWrite(OUTPUT_SECOND_PINTurnElbow, 0);
+        StepCounterTurnElbow = 0;
+        OnEdgeTurnElbow = true;
+      }
+      stopitTurnElbow = true;
+      homedTurnElbow = true;
+    }
+    }
+    Serial.print("homed TurnElbow on: ");
+    Serial.println(StepCounterTurnElbow);
+  */
+  homed = true;
 }
 
 void loop() {
 
-  if (homed == false) {
-    homing();
-  }
+
+    if (homed == false) {
+      homing();
+    }
 
 
+/*
+    while (!Serial.available());
+    if (Serial.available() > 0) {
+      input = Serial.readStringUntil('\n');
 
-  while (!Serial.available());
-  if (Serial.available() > 0) {
-    input = Serial.readStringUntil('\n');
+      if (input == "Shoulder" || input == "Base" || input == "TurnElbow" || input == "BuckleElbow" || input == "TurnHand" || input == "BuckleHand" || input == "CloseOpenHand" ) {
+        mode = input;
+        Serial.println(mode);
+      } else {
+        if (mode == "Base") {
+          SerialBase =  atol(input.c_str());
+          Serial.println(SerialBase);
+          mode = "";
+          moveRobotBase(SerialBase);
+        }
+        if (mode == "Shoulder") {
+          SerialShoulder =  atol(input.c_str());
+          Serial.println(SerialShoulder);
+          mode = "";
+          moveRobotShoulder(SerialShoulder);
+        }
+        if (mode == "TurnElbow") {
+          SerialTurnElbow =  atol(input.c_str());
+          Serial.println(SerialTurnElbow);
+          mode = "";
+          moveRobotTurnElbow(SerialTurnElbow);
+        }
+        if (mode == "BuckleElbow") {
 
-    if (input == "Shoulder" || input == "Base" || input == "TurnElbow" || input == "BuckleElbow" || input == "TurnHand" || input == "BuckleHand" || input == "CloseOpenHand" ) {
-      mode = input;
-      Serial.println(mode);
-    } else {
-      if (mode == "Base") {
-        SerialBase =  atol(input.c_str());
-        Serial.println(SerialBase);
-        mode = "";
-        moveRobotBase(SerialBase);
-      }
-      if (mode == "Shoulder") {
-        SerialShoulder =  atol(input.c_str());
-        Serial.println(SerialShoulder);
-        mode = "";
-        moveRobotShoulder(SerialShoulder);
-      }
-      if (mode == "TurnElbow") {
-        SerialTurnElbow =  atol(input.c_str());
-        Serial.println(SerialTurnElbow);
-        mode = "";
-        moveRobotTurnElbow(SerialTurnElbow);
-      }
-      if (mode == "BuckleElbow") {
-
-        SerialBuckleElbow =  atol(input.c_str());
-        Serial.println(SerialBuckleElbow);
-        mode = "";
-        moveRobotElbow(SerialBuckleElbow);
-      }
-      if (mode == "BuckleHand") {
-        SerialBuckleHand =  atol(input.c_str());
-        Serial.println(SerialBuckleHand);
-        mode = "";
-        moveRobotBuckleHand(SerialBuckleHand);
-      }
-      if (mode == "CloseOpenHand") {
-        SerialCloseHand =  atol(input.c_str());
-        Serial.println(SerialCloseHand);
-        mode = "";
-        moveRobotCloseHand(SerialCloseHand);
+          SerialBuckleElbow =  atol(input.c_str());
+          Serial.println(SerialBuckleElbow);
+          mode = "";
+          moveRobotElbow(SerialBuckleElbow);
+        }
+        if (mode == "BuckleHand") {
+          SerialBuckleHand =  atol(input.c_str());
+          Serial.println(SerialBuckleHand);
+          mode = "";
+          moveRobotBuckleHand(SerialBuckleHand);
+        }
+        if (mode == "CloseOpenHand") {
+          SerialCloseHand =  atol(input.c_str());
+          Serial.println(SerialCloseHand);
+          mode = "";
+          moveRobotCloseHand(SerialCloseHand);
+        }
       }
     }
-  }
+
+  */
 }
