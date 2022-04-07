@@ -311,6 +311,7 @@ int moveAxis(MyAxis* data) {
   Serial.println("goal");
   Serial.println(data->goal);
   if (digitalRead(data->Endstop1) == 1 && digitalRead(data->Endstop2) == 0) {
+    data->Position = 0;
     return 1;
   } else if (digitalRead(data->Endstop2) == 1 && digitalRead(data->Endstop1) == 0) {
     return 2;
