@@ -11,7 +11,7 @@
        Turn Ell       Buckle Ell
    I53,52I I51,50I I49,48I I47,46I
      Buckle Hand   Close Open Hand
-   I22,23I I24,25I I26,27I I28,29I
+    I26,27I I28,29I I24,25I I22,23I
 
 
           OUTPUTS
@@ -221,10 +221,10 @@ void setup() {
   pinMode(PIN_OUTPUT_SECOND_C_Hand, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_SENSOR_ONEC_Hand), PositionOfC_Hand, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PIN_SENSOR_TWOC_Hand), PositionOfC_Hand, CHANGE);
-  init_Axis(&C_Hand, 0, 0, PIN_OUTPUT_FIRST_C_Hand, PIN_OUTPUT_SECOND_C_Hand, Pin_EndStop_B_Hand, PIN_EndStoP2_B_Hand, 0, SearchEnd, 0, 0, 0, digitalRead(PIN_SENSOR_ONEB_Hand), digitalRead(PIN_SENSOR_TWOB_Hand), PIN_SENSOR_ONEB_Hand, PIN_SENSOR_TWOB_Hand);
+  init_Axis(&C_Hand, 0, 0, PIN_OUTPUT_FIRST_C_Hand, PIN_OUTPUT_SECOND_C_Hand, Pin_EndStop_C_Hand, PIN_EndStoP2_C_Hand, 0, SearchEnd, 0, 0, 0, digitalRead(PIN_SENSOR_ONEB_Hand), digitalRead(PIN_SENSOR_TWOB_Hand), PIN_SENSOR_ONEB_Hand, PIN_SENSOR_TWOB_Hand);
 
 
-  // homing();
+   homing();
 }
 void Endstop_L_B() {
   MyStepperAxis* data = &L_Base;
@@ -389,6 +389,8 @@ int moveStepperAxis(MyStepperAxis* data) {
   }
 }
 bool homing() {
+ /* Serial.println("homed L_Base with");
+  Serial.println(moveStepperAxis(&L_Base));
   Serial.println("homed Base with");
   Serial.println(moveAxis(&Base));
   Serial.println("homed Shoulder with");
@@ -399,7 +401,7 @@ bool homing() {
   Serial.println(moveAxis(&B_Ellbow));
   Serial.println("homed B_Hand with");
   Serial.println(moveAxis(&B_Hand));
-  Serial.println("homed C_Hand with");
+  */Serial.println("homed C_Hand with");
   Serial.println(moveAxis(&C_Hand));
   return true;
 }
@@ -423,7 +425,7 @@ void loop() {
     switch (Mode) {
       case 237: //L_B
         Serial.println(SerialData);
-        SetGoal(&L_Base, SerialData.toInt());
+       // SetGoal(&L_Base, SerialData.toInt());
         moveStepperAxis(&L_Base);
         break;
       case 256: //__B
